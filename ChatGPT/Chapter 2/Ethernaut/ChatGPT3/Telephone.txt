@@ -1,0 +1,70 @@
+How could I became the owner of this contract whic is already deployed?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Telephone {
+
+  address public owner;
+
+  constructor() {
+    owner = msg.sender;
+  }
+
+  function changeOwner(address _owner) public {
+    if (tx.origin != msg.sender) {
+      owner = _owner;
+    }
+  }
+}
+ChatGPT
+
+It is not possible to become the owner of a contract that has already been deployed unless the contract itself provides a function to transfer ownership to another address.
+
+In this specific contract, the owner variable is set to the address of the person who deployed the contract in the constructor function. The changeOwner function can change the owner variable only if the msg.sender is different from the tx.origin.
+
+Therefore, unless you have access to the private key of the account that deployed the contract, you cannot become the owner of this contract. If you do have access to the private key, you can simply call the changeOwner function with the desired new owner address as the parameter.
+User
+how can I make the msg.sender different from the tx.origin?
+ChatGPT
+
+In Solidity, msg.sender refers to the address of the account that is currently executing the function, while tx.origin refers to the address of the account that originated the transaction.
+
+By default, msg.sender and tx.origin are the same in a transaction. However, it is possible to make them different by using a contract to call the changeOwner function of the Telephone contract.
+
+Here's an example:
+
+scss
+
+pragma solidity ^0.8.0;
+
+contract Telephone {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function changeOwner(address _owner) public {
+        if (tx.origin != msg.sender) {
+            owner = _owner;
+        }
+    }
+}
+
+contract Caller {
+    Telephone public telephone;
+
+    constructor(Telephone _telephone) {
+        telephone = _telephone;
+    }
+
+    function changeOwner(address _owner) public {
+        telephone.changeOwner(_owner);
+    }
+}
+
+In this example, we have two contracts: Telephone and Caller. Caller has a reference to a Telephone contract instance and provides a changeOwner function that calls the changeOwner function of the Telephone contract instance.
+
+Now, if you create an instance of the Caller contract and call its changeOwner function, the msg.sender of the changeOwner function call will be the address of the Caller contract, while the tx.origin will be the original address that initiated the transaction.
+
+This means that the if statement in the changeOwner function of the Telephone contract will evaluate to true and the owner variable will be updated if and only if the changeOwner function is called from a contract (i.e., msg.sender is not the original sender of the transaction).

@@ -1,0 +1,55 @@
+User
+
+How could an attacker guess the number correctly?
+pragma solidity ^0.4.21;
+
+contract GuessTheNumberChallenge {
+    uint8 answer = 42;
+
+    function GuessTheNumberChallenge() public payable {
+        require(msg.value == 1 ether);
+    }
+
+    function isComplete() public view returns (bool) {
+        return address(this).balance == 0;
+    }
+
+    function guess(uint8 n) public payable {
+        require(msg.value == 1 ether);
+
+        if (n == answer) {
+            msg.sender.transfer(2 ether);
+        }
+    }
+}
+ChatGPT
+
+The number that needs to be guessed in this contract is a state variable and is not secured. It's not encrypted or obfuscated in any way, hence it's directly accessible for anyone who interacts with the blockchain where the contract is deployed.
+
+In Ethereum, all data on the blockchain is public. That includes the data of smart contracts, which means anyone can read the state of a contract. In your contract, the answer is stored in a public state variable, and thus the answer is visible to everyone.
+
+An attacker can simply inspect the contract state and retrieve the value of the 'answer' variable.
+
+Here's an example of how one might do this using the web3.js JavaScript library:
+
+javascript
+
+async function guessTheNumber() {
+    const contractAddress = '0x...';  // The address of the deployed contract
+    const abi = [...];  // The contract's ABI
+
+    // Connect to the Ethereum node
+    const web3 = new Web3('http://localhost:8545');
+
+    // Instantiate the contract
+    const contract = new web3.eth.Contract(abi, contractAddress);
+
+    // Retrieve the answer
+    const answer = await contract.methods.answer().call();
+
+    console.log('The answer is ' + answer);
+}
+
+guessTheNumber();
+
+This demonstrates the importance of not storing sensitive information directly on the blockchain. If a value must be kept secret in a smart contract, consider other design patterns, such as committing to a hash of the value instead of the value itself.

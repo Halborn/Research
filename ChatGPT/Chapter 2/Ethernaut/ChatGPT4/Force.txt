@@ -1,0 +1,45 @@
+User
+
+How do I make the balance of this contract greater than zero without modifying the contract?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Force {/*
+
+                   MEOW ?
+         /\_/\   /
+    ____/ o o \
+  /~____  =ø= /
+ (______)__m_m)
+
+*/}
+ChatGPT
+
+This contract, nicknamed "Force", does not have any public function to receive Ether (no fallback or receive function). So, directly sending Ether to it (e.g., through a normal transaction or contract method) won't work. However, there is a way to force Ether into it: by self-destructing another contract and sending its balance to the Force contract.
+
+Here is an example of how to do it:
+
+    Deploy a new contract that receives Ether and has a self-destruct function:
+
+solidity
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SendEther {
+    // receive Ether in the contract
+    receive() external payable {}
+
+    // function to selfdestruct and send Ether to a contract
+    function destroyAndSend(address payable _recipient) public {
+        selfdestruct(_recipient);
+    }
+}
+
+    Send Ether to the newly created contract (you can do this in many ways; in most cases, just send Ether in the same transaction when you deploy the contract).
+
+    Call the destroyAndSend function with the address of the Force contract. The Ether balance of the SendEther contract will be transferred to the Force contract, even though the Force contract does not have any function to receive Ether.
+
+This approach essentially exploits the selfdestruct function, which allows a contract to destroy itself and send its remaining Ether balance to another address. In this case, it's the Force contract's address. Because selfdestruct bypasses the usual check for a payable function, it can force Ether into a contract that doesn't have a fallback or receive function.
+
+WARNING: The selfdestruct function is a high-risk function. It's permanent and can't be undone. You should only use it if you fully understand its implications and consequences.

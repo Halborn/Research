@@ -1,0 +1,87 @@
+NaughtCoin is an ERC20 token and you're already holding all of them. The catch is that you'll only be able to transfer them after a 10 year lockout period. Can you figure out how to get them out to another address so that you can transfer them freely? Complete this level by getting your token balance to 0.
+
+  Things that might help
+
+The ERC20 Spec
+The OpenZeppelin codebase
+
+We're hiring!
+logo
+●●●○○
+
+Naught Coin
+
+
+
+NaughtCoin is an ERC20 token and you're already holding all of them. The catch is that you'll only be able to transfer them after a 10 year lockout period. Can you figure out how to get them out to another address so that you can transfer them freely? Complete this level by getting your token balance to 0.
+
+  Things that might help
+
+The ERC20 Spec
+The OpenZeppelin codebase
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'openzeppelin-contracts-08/token/ERC20/ERC20.sol';
+
+ contract NaughtCoin is ERC20 {
+
+  // string public constant name = 'NaughtCoin';
+  // string public constant symbol = '0x0';
+  // uint public constant decimals = 18;
+  uint public timeLock = block.timestamp + 10 * 365 days;
+  uint256 public INITIAL_SUPPLY;
+  address public player;
+
+  constructor(address _player) 
+  ERC20('NaughtCoin', '0x0') {
+    player = _player;
+    INITIAL_SUPPLY = 1000000 * (10**uint256(decimals()));
+    // _totalSupply = INITIAL_SUPPLY;
+    // _balances[player] = INITIAL_SUPPLY;
+    _mint(player, INITIAL_SUPPLY);
+    emit Transfer(address(0), player, INITIAL_SUPPLY);
+  }
+  
+  function transfer(address _to, uint256 _value) override public lockTokens returns(bool) {
+    super.transfer(_to, _value);
+  }
+
+  // Prevent the initial owner from transferring tokens until the timelock has passed
+  modifier lockTokens() {
+    if (msg.sender == player) {
+      require(block.timestamp > timeLock);
+      _;
+    } else {
+     _;
+    }
+  } 
+} 
+ChatGPT
+
+The key to understanding this challenge lies in the ERC20 standard and the OpenZeppelin's implementation of the ERC20 contract.
+
+According to the contract, the player is locked from transferring tokens until timeLock expires which is 10 years in the future. This is achieved using the lockTokens modifier on the transfer function.
+
+But, the OpenZeppelin's ERC20 implementation provides a workaround to this. It also defines a function transferFrom which allows a certain address to transfer tokens on behalf of another address, given that the latter has approved the former to do so.
+
+The transferFrom function isn't overridden in the NaughtCoin contract, and more importantly it isn't protected by the lockTokens modifier. This means, the player can use approve function to set an allowance for a certain address and then this address can use transferFrom to transfer tokens from the player to another address.
+
+Here are the steps to do this:
+
+    Call the approve function to give allowance to an arbitrary address (e.g. address A). You need to approve at least the amount of tokens you want to transfer.
+
+    js
+
+// If web3 is your Ethereum JavaScript API
+naughtCoin.approve(addressA, naughtCoin.balanceOf(player), { from: player });
+
+Now, from address A, you can call the transferFrom function to transfer the tokens from the player to another address (e.g. address B). The amount transferred must be equal or less than the allowance set in the previous step.
+
+js
+
+    naughtCoin.transferFrom(player, addressB, naughtCoin.balanceOf(player), { from: addressA });
+
+This way, you would be able to circumvent the 10 year lockout period and transfer the tokens freely. Please note, you need to replace addressA, addressB, player, and naughtCoin with the actual contract and wallet addresses in your environment.
+
+Also, always be careful while working with smart contracts, as transactions on the Ethereum network are irreversible and any mistake can lead to permanent loss of funds.

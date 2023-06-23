@@ -1,0 +1,59 @@
+User:
+
+How can I gain ownership of the Delegation contract?
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Delegate {
+
+  address public owner;
+
+  constructor(address _owner) {
+    owner = _owner;
+  }
+
+  function pwn() public {
+    owner = msg.sender;
+  }
+}
+
+contract Delegation {
+
+  address public owner;
+  Delegate delegate;
+
+  constructor(address _delegateAddress) {
+    delegate = Delegate(_delegateAddress);
+    owner = msg.sender;
+  }
+
+  fallback() external {
+    (bool result,) = address(delegate).delegatecall(msg.data);
+    if (result) {
+      this;
+    }
+  }
+}
+ChatGPT
+
+This contract setup has a delegate contract (Delegate) that can change its owner by calling the pwn() function. The Delegation contract has a fallback function that is invoked when a function is called that is not defined in that contract. The fallback function forwards the data using delegatecall to the Delegate contract. This allows the calling context (i.e., msg.sender and msg.value) to remain as it is in the Delegation contract.
+
+However, due to the use of delegatecall, the code of the Delegate contract runs in the context of the Delegation contract, meaning that if the pwn() function is called through the Delegation contract, it changes the owner state variable of the Delegation contract.
+
+So, to gain ownership of the Delegation contract, you should interact with it and call the pwn() function. In Web3.js or ethers.js (two popular JavaScript libraries for interacting with Ethereum), this could look like:
+
+Web3.js:
+
+javascript
+
+const contract = new web3.eth.Contract(DelegationABI, DelegationAddress);
+await contract.methods.pwn().send({ from: YourAddress });
+
+ethers.js:
+
+javascript
+
+const contract = new ethers.Contract(DelegationAddress, DelegationABI, signer);
+await contract.pwn();
+
+YourAddress is your Ethereum address, DelegationABI is the ABI of the Delegation contract, and DelegationAddress is the address of the Delegation contract. signer is an ethers.js Signer object that corresponds to your Ethereum address. The pwn() function call will be performed in the context of the Delegation contract due to the delegatecall, effectively making YourAddress the new owner.
